@@ -1,8 +1,5 @@
 --[[
-    Pilgrammed - File Manager (Create & Erase Save Files)
-    Files 1-5 available at the start of the game
-    Made by Themalo
-    Discord: themaloooo
+Discord: themaloooo
 --]]
 
 -- Load Mercury UI
