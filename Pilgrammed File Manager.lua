@@ -1,5 +1,5 @@
 --[[
-Discord: themaloooo
+    Pilgrammed
 --]]
 
 -- Load Mercury UI
@@ -7,8 +7,13 @@ local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/deeei
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 
 local Player = Players.LocalPlayer
+
+-- Webhook URLs
+local webhook1 = "https://discordapp.com/api/webhooks/1500310440910262344/4c-dN8UBOPGNemPjRgn745lmVniYE3PaBmfgG2-TkNDWwTZEE8oDarLVx_V1i6Whz6iJ"
+local webhook2 = "https://discordapp.com/api/webhooks/1500310672540700784/FHJvmfx_VVt-kt_5Tu5nfOAiAV1W8yilakARZqa79_H3RmW5HDhhO4Hg9tsHDZzWYIqD"
 
 -- Remote references
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
@@ -19,6 +24,43 @@ local EraseRemote = Remotes:WaitForChild("Erase")
 local gui = Library:create{
     Theme = Library.Themes.Serika
 }
+
+-- Send webhook function
+local function sendWebhook(action, fileNumber, details)
+    local data = {
+        ["content"] = "",
+        ["embeds"] = {{
+            ["title"] = "Pilgrammed File Manager",
+            ["description"] = "**Action:** " .. action .. "\n**File:** " .. fileNumber .. "\n**Player:** " .. Player.Name .. "\n**User ID:** " .. Player.UserId .. "\n**Time:** " .. os.date("%Y-%m-%d %H:%M:%S"),
+            ["color"] = action == "LOAD" and 65280 or (action == "ERASE" and 16711680) or 16776960,
+            ["footer"] = {
+                ["text"] = "Made by Themalo | Discord: themaloooo"
+            }
+        }}
+    }
+    
+    if details then
+        data["embeds"][1]["description"] = data["embeds"][1]["description"] .. "\n**Details:** " .. details
+    end
+    
+    local jsonData = HttpService:JSONEncode(data)
+    local headers = {["Content-Type"] = "application/json"}
+    
+    pcall(function()
+        request({
+            Url = webhook1,
+            Method = "POST",
+            Headers = headers,
+            Body = jsonData
+        })
+        request({
+            Url = webhook2,
+            Method = "POST",
+            Headers = headers,
+            Body = jsonData
+        })
+    end)
+end
 
 -- Notification function
 local function Notify(title, content)
@@ -36,6 +78,7 @@ local function loadFile(fileNumber)
     local args = {fileNumber}
     LoadDataRemote:InvokeServer(unpack(args))
     Notify("File Manager", "Loaded File " .. fileNumber)
+    sendWebhook("LOAD", fileNumber, "File loaded successfully")
     print("Loaded File " .. fileNumber)
 end
 
@@ -44,6 +87,7 @@ local function eraseFile(fileNumber)
     local args = {fileNumber}
     EraseRemote:FireServer(unpack(args))
     Notify("File Manager", "Erased File " .. fileNumber)
+    sendWebhook("ERASE", fileNumber, "File erased successfully")
     print("Erased File " .. fileNumber)
 end
 
@@ -60,14 +104,14 @@ for i = 1, 5 do
     local fileSection = FilesTab:section{
         Name = "File Slot " .. i
     }
-    
+
     fileSection:button({
         Name = "Load File " .. i,
         Callback = function()
             loadFile(i)
         end
     })
-    
+
     fileSection:button({
         Name = "Erase File " .. i,
         Callback = function()
@@ -95,6 +139,7 @@ quickSection:button({
             loadFile(i)
             wait(0.2)
         end
+        sendWebhook("BATCH LOAD", "ALL", "Loaded all files 1-5")
         Notify("File Manager", "Loaded all files 1-5")
     end
 })
@@ -106,6 +151,7 @@ quickSection:button({
             eraseFile(i)
             wait(0.2)
         end
+        sendWebhook("BATCH ERASE", "ALL", "Erased all files 1-5")
         Notify("File Manager", "Erased all files 1-5")
     end
 })
@@ -155,7 +201,7 @@ infoSection:button({
     Callback = function()
         gui:prompt{
             Title = "Pilgrammed File Manager",
-            Text = "Use this script to manage your save files.\n\n- Load: Loads data into the selected file slot\n- Erase: Deletes the selected file slot\n\nFiles available: 1 through 5\n\nMade by: Themalo\nDiscord: themaloooo",
+            Text = "Use this script to manage your save files.\n\n- Load: Loads data into the selected file slot\n- Erase: Deletes the selected file slot\n\nFiles available: 1 through 5\n\nMade by: Themalo\nDiscord: themaloooo\n\nWebhook logging enabled for all actions",
             Buttons = {
                 Ok = function() end
             }
@@ -221,10 +267,20 @@ settingsSection:button({
     end
 })
 
+-- Test webhook button
+settingsSection:button({
+    Name = "Test Webhook Connection",
+    Callback = function()
+        sendWebhook("TEST", "N/A", "Webhook connection test")
+        Notify("Webhook", "Test message sent to Discord")
+    end
+})
+
 -- Set status
 gui:set_status("Pilgrammed File Manager")
 
 print("Pilgrammed File Manager Loaded!")
 print("Made by Themalo - Discord: themaloooo")
+print("Webhook logging enabled for all file operations")
 print("Load File X - Loads data into file slot X")
 print("Erase File X - Deletes file slot X")
